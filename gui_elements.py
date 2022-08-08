@@ -116,3 +116,48 @@ class PlaceholderEntry(ttk.Entry):
 
 class PlaceholderCombobox(PlaceholderEntry, ttk.Combobox):
     pass
+
+
+class HelpLabel(ttk.Label):
+    WRAPLENGTH = 200
+
+    def __init__(
+        self, master: tk.Misc, *args: Any, delay: int = 1000, tooltip: str = '', **kwargs: Any
+    ):
+        super().__init__(master, *args, **kwargs)
+        self.delay: int = delay
+        self.tooltip: str = tooltip
+        self._tlw: tk.Wm | None = None
+        self._schedule_id: str | None = None
+        self.bind("<Enter>", self._schedule)
+        self.bind("<Leave>", self._hide)
+
+    def _schedule(self, event: tk.Event[HelpLabel]):
+        if self._schedule_id is None:
+            self._schedule_id = self.after(self.delay, self._show)
+
+    def _show(self):
+        self._tlw = tk.Toplevel(self)
+        self._tlw.wm_overrideredirect(True)
+        self.update_idletasks()
+        x, y, cx, cy = self.bbox() or (0, 0, 0, 0)
+        x += self.winfo_rootx() + 25
+        y += self.winfo_rooty() + 20
+        self._tlw.wm_geometry(f"+{x}+{y}")
+        label = ttk.Label(
+            self._tlw,
+            text=self.tooltip,
+            justify="left",
+            background="lightyellow",
+            relief="solid",
+            borderwidth=1,
+            wraplength=self.WRAPLENGTH,
+        )
+        label.pack(ipadx=1)
+
+    def _hide(self, event: tk.Event[HelpLabel] | None = None):
+        if self._schedule_id is not None:
+            self.after_cancel(self._schedule_id)
+            self._schedule_id = None
+        elif self._tlw is not None:
+            self._tlw.destroy()  # type: ignore
