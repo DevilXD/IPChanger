@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
+from collections import abc  # noqa
+from functools import partial
+from typing import Any, Generic, TypeVar
+
+
+_T = TypeVar("_T")
 
 
 class PlaceholderEntry(ttk.Entry):
@@ -122,7 +127,7 @@ class HelpLabel(ttk.Label):
     WRAPLENGTH = 200
 
     def __init__(
-        self, master: tk.Misc, *args: Any, delay: int = 1000, tooltip: str = '', **kwargs: Any
+        self, master: tk.Misc, *args: Any, delay: int = 800, tooltip: str = '', **kwargs: Any
     ):
         super().__init__(master, *args, **kwargs)
         self.delay: int = delay
@@ -139,10 +144,8 @@ class HelpLabel(ttk.Label):
     def _show(self):
         self._tlw = tk.Toplevel(self)
         self._tlw.wm_overrideredirect(True)
-        self.update_idletasks()
-        x, y, cx, cy = self.bbox() or (0, 0, 0, 0)
-        x += self.winfo_rootx() + 25
-        y += self.winfo_rooty() + 20
+        x = self.winfo_pointerx() + 2
+        y = self.winfo_pointery() - 20
         self._tlw.wm_geometry(f"+{x}+{y}")
         label = ttk.Label(
             self._tlw,
@@ -159,5 +162,27 @@ class HelpLabel(ttk.Label):
         if self._schedule_id is not None:
             self.after_cancel(self._schedule_id)
             self._schedule_id = None
-        elif self._tlw is not None:
+        if self._tlw is not None:
             self._tlw.destroy()  # type: ignore
+
+
+class SelectMenu(tk.Menubutton, Generic[_T]):
+    def __init__(
+        self,
+        master: tk.Misc,
+        *args: Any,
+        tearoff: bool = False,
+        options: dict[str, _T],
+        relief: tk._Relief = "solid",
+        background: tk._Color = "white",
+        **kwargs: Any,
+    ):
+        super().__init__(master, *args, background=background, relief=relief, width=40, **kwargs)
+        self._options: dict[str, _T] = options
+        self.menu = tk.Menu(self, tearoff=tearoff)
+        self.config(menu=self.menu)
+        for name in options.keys():
+            self.menu.add_command(label=name, command=partial(self.config, text=name))
+
+    def get(self) -> _T | None:
+        return self._options.get(self.cget("text"))
