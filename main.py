@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 import tkinter as tk
 from tkinter import ttk
-from typing import Any
 
 import wmi as wmi_lib
 
+from element_types import InterfaceType
 from gui_elements import PlaceholderEntry, HelpLabel, SelectMenu
 
 
@@ -41,12 +41,12 @@ root.title("IP Changer (by DevilXD)")
 frame = ttk.Frame(root, padding=20)
 frame.pack(expand=True, fill="both")
 # Gather and display a list of interfaces
-raw_interfaces = wmi.Win32_NetworkAdapterConfiguration(IPEnabled=True)
-interfaces: dict[str, Any] = {i.Description: i for i in raw_interfaces}
+raw_interfaces: list[InterfaceType] = wmi.Win32_NetworkAdapterConfiguration(IPEnabled=True)
+interfaces: dict[str, InterfaceType] = {i.Description: i for i in raw_interfaces}
 HelpLabel(
     frame, text="Interface: ", tooltip="Select the interface to interract with."
 ).grid(column=0, row=0)
-nic_menu: SelectMenu[Any] = SelectMenu(frame, options=interfaces)
+nic_menu: SelectMenu[InterfaceType] = SelectMenu(frame, options=interfaces)
 nic_menu.grid(column=1, row=0, sticky="ew")
 ipaddress = PlaceholderEntry(frame, placeholder="IP Address")
 ipaddress.grid(column=0, row=1, sticky="ew")
